@@ -76,7 +76,7 @@ const countMarkerItems = (markers: (API.MarkerVo | undefined)[]) => markers.redu
 const itemTotalMap = computed(() => countMarkerItems(totalMarkers.value))
 
 const itemCountMap = asyncComputed(async () => {
-  const archivedMarkerIds = [...archiveStore.currentArchive.body.Data_KYJG]
+  const archivedMarkerIds = [...archiveStore.currentArchive.Data_KYJG]
   const archivedMarkers = await db.marker.bulkGet(archivedMarkerIds)
   return countMarkerItems(archivedMarkers)
 })

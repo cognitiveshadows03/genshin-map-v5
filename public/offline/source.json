@@ -1,0 +1,16 @@
+{
+  "snapshot": "https://github.com/kxxoling/genshin-map-data",
+  "upstream": "HoYoverse public interactive map snapshot",
+  "mapVersion": "eea752b746ae1f2e0c1988a574f2b7b0",
+  "gameVersion": "7.1.0",
+  "fetchedAt": "2026-10-19T15:29:50.223Z",
+  "tileCount": 13770,
+  "tileBytes": 76927502,
+  "tileSha256": "3c32ef6b42e5e75b8358995681c7c0df8b5e0a46b92ccafa24812d305123ae4d",
+  "iconCount": 793,
+  "iconBytes": 1598012,
+  "iconSha256": "a9d5bd7d476aae9ce8310e81b38c5310d48bf5078730b01f567a995476d7a288",
+  "categoryCount": 15,
+  "surfaceMarkerCount": 85788,
+  "excludedFloorMarkerCount": 2896
+}

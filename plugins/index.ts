@@ -1,1 +1,1 @@
-export * from './openapi2ts'
+export * from './offline'

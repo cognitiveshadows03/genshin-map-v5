@@ -27,7 +27,12 @@ const ADMIN_ROLES = [RoleTypeEnum.ADMIN, RoleTypeEnum.MAP_MANAGER]
 const TOKEN_REFRESH_REST_TIME = import.meta.env.VITE_TOKEN_REFRESH_REST_TIME * 1000
 
 /** 持久化存储的用户信息 */
-const localUserInfo = useLocalStorage<API.SysUserVo>('__ys_user_info', {})
+const localUserInfo = useLocalStorage<API.SysUserVo>('__ys_user_info', {
+  id: 1,
+  username: 'offline',
+  nickname: '离线用户',
+  logo: '',
+})
 /** 持久化存储的鉴权信息 */
 const localUserAuth = useLocalStorage<Partial<UserAuth>>('__ys_dadian_auth', {})
 /** 鉴权刷新计时器 */
@@ -62,8 +67,9 @@ export const useUserStore = defineStore('user-info', {
   getters: {
     /** 是否显示加载面板 */
     showLoadingPanel: (state) => {
-      const route = useRoute()
-      return route.meta.preload && (state.isHandling || state.isRouteLoading || !state.isRouteAnimationEnd)
+      // The offline app has a single map route. Using useRoute() inside a
+      // Pinia getter is injection-context dependent and can crash at startup.
+      return state.isHandling || state.isRouteLoading || !state.isRouteAnimationEnd
     },
     /** TODO: 等后端返回改为单角色后就不需要这个了 */
     role: (state) => {
@@ -103,6 +109,8 @@ export const useUserStore = defineStore('user-info', {
   actions: {
     /** 创建自动刷新鉴权信息的定时器 */
     createRefreshTimer() {
+      if (this.isOfflineMode)
+        return
       try {
         if (intervalRefreshTimer.value !== undefined)
           return logger.info('已存在刷新任务，将会重用')
@@ -130,6 +138,8 @@ export const useUserStore = defineStore('user-info', {
     },
     /** 检查 token 是否有效 */
     validateUserToken(): boolean {
+      if (this.isOfflineMode)
+        return true
       const { access_token, expires_time } = this.auth
       if (!access_token || !expires_time)
         return false
@@ -146,6 +156,8 @@ export const useUserStore = defineStore('user-info', {
     },
     /** 刷新鉴权信息 */
     async refreshAuth() {
+      if (this.isOfflineMode)
+        return
       try {
         const auth = await Oauth.oauth.token()
         this.setAuth(auth)

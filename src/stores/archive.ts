@@ -1,60 +1,53 @@
 import { defineStore } from 'pinia'
 
 export interface ArchiveBody {
-  /** 点位存档 */
+  /** 已标记点位 */
   Data_KYJG: Set<number>
-  /**
-   * 刷新时间存档
-   * @format `YYYY/MM/DD HH:mm:ss`
-   */
+  /** 刷新时间存档，格式 YYYY/MM/DD HH:mm:ss */
   Time_KYJG: Record<number, string>
   /** 最新修改时间 */
   updated_at: number
 }
 
-// gitee鉴权信息
-export interface GiteeAuth {
-  /** gitee 用户名 */
-  username: string
-  /** gitee token */
-  token: string
-  /** gitee refresh_token */
-  refresh_token: string
-}
-const localUserAuth = useStorage<Partial<GiteeAuth>>('__ysmap_gitee_auth', {})
-
-// gitee存档数据结构
-interface GiteeArchive {
-  files: Record<string, Record<string, string>>
-  description: string
-  updated_at: string
-  created_at: string
-}
-
-// 本地存档数据
-const localArchive = useStorage<ArchiveBody>('__ysmap_archive', {
+const createArchive = (): ArchiveBody => ({
   Data_KYJG: new Set(),
   Time_KYJG: {},
   updated_at: Date.now(),
 })
 
-/**
- * 存档管理
- */
+// localStorage JSON cannot represent Set directly. Store its values as an
+// array and restore a real Set before any marker layer reads it.
+const localArchive = useStorage<ArchiveBody>('__ysmap_archive', createArchive(), localStorage, {
+  serializer: {
+    read: (raw) => {
+      try {
+        const value = JSON.parse(raw) as Partial<ArchiveBody>
+        return {
+          Data_KYJG: new Set(Array.isArray(value.Data_KYJG) ? value.Data_KYJG : []),
+          Time_KYJG: value.Time_KYJG ?? {},
+          updated_at: value.updated_at ?? Date.now(),
+        }
+      }
+      catch {
+        return createArchive()
+      }
+    },
+    write: value => JSON.stringify({
+      ...value,
+      Data_KYJG: [...value.Data_KYJG],
+    }),
+  },
+})
+
+/** Offline archive management: one local slot, no cloud account or API. */
 export const useArchiveStore = defineStore('global-archive', {
   state: () => ({
     fetchLoading: false,
   }),
 
   getters: {
-    /** 当前存档 */
-    currentArchive: () => localArchive,
+    currentArchive: () => localArchive.value,
   },
 
-  actions: {
-    /** 请求gitee授权, 跳转到一个Url */
-    giteeAuthorize() {
-      location.href = 'https://gitee.com/oauth/authorize?client_id=844e73cca6596c68e2ebd0fc1b8950d7a463b031085e851a23315d44e405effb&redirect_uri=http://127.0.0.1:9001/&response_type=code'
-    },
-  },
+  actions: {},
 })

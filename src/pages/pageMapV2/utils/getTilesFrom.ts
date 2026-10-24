@@ -1,7 +1,11 @@
 import { BitmapLayer } from '@deck.gl/layers/typed'
 import { TileLayer } from '@deck.gl/geo-layers/typed'
 import type { GenshinBaseLayer } from '../core'
+import { getOfflineTile } from '@/offline'
 
+const zoomSuffix = (zoom: number) => `${zoom < 0 ? 'N' : 'P'}${Math.abs(zoom)}`
+
+/** Read tiles exclusively from the bundled, byte-for-byte local snapshot. */
 export const getTilesFrom = (target: GenshinBaseLayer): TileLayer => new TileLayer({
   id: `${target.props.id}-tile`,
   pickable: target.context.deck.stateManager.get('showTooltip'),
@@ -9,32 +13,36 @@ export const getTilesFrom = (target: GenshinBaseLayer): TileLayer => new TileLay
   coordinateOrigin: target.rawProps.coordinateOrigin,
   data: null,
   tileSize: 256,
-  minZoom: -3, // 固定值，对应服务端存储底图的 level 10
-  maxZoom: 0, // 固定值，对应服务端存储底图的 level 13
-  maxRequests: 1,
-  extent: target.rawProps.bounds,
+  minZoom: -3,
+  maxZoom: 0,
+  maxRequests: 6,
+  // TileLayer expects [minX, minY, maxX, maxY]. GenshinBaseLayer.bounds
+  // deliberately uses BitmapLayer's [minX, maxY, maxX, minY] ordering.
+  extent: [
+    target.rawProps.bounds[0],
+    target.rawProps.bounds[3],
+    target.rawProps.bounds[2],
+    target.rawProps.bounds[1],
+  ],
   opacity: target.context.deck.stateManager.get('showOverlay') ? 0.3 : 1,
   maxCacheSize: target.context.deck.stateManager.get('maxCacheTileSize'),
   getTileData: async ({ index: { x, y, z }, signal }) => {
-    try {
-      if (signal?.aborted)
-        return null
-      const url = `${import.meta.env.VITE_ASSETS_BASE}/tiles_${target.rawProps.code}/${z + 13}/${x}_${y}.${target.rawProps.extension}`
-      const blob = await fetch(url, { mode: 'cors' }).then(res => res.blob())
-      const image = await createImageBitmap(blob)
-      return {
-        byteLength: blob.size,
-        image,
-      }
-    }
-    catch {
+    if (signal?.aborted)
       return null
+    const blob = await getOfflineTile(`${x}_${y}_${zoomSuffix(z)}.webp`)
+    if (!blob || signal?.aborted)
+      return null
+    const image = await createImageBitmap(blob)
+    return {
+      byteLength: blob.size,
+      image,
     }
   },
   renderSubLayers: (subProps) => {
+    if (!subProps.data)
+      return null
     const [[xmin, ymin], [xmax, ymax]] = subProps.tile.boundingBox
     return new BitmapLayer(subProps, {
-      // 通过自定义 getTileData 函数获取图片，不需要 data 字段，必须明确指定为空
       data: undefined,
       image: subProps.data.image,
       bounds: [xmin, ymax, xmax, ymin],

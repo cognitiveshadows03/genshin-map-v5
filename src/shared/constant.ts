@@ -1,5 +1,5 @@
 /** 物品 icon 加载失败时的回退 url */
-export const FALLBACK_ITEM_ICON_URL = 'https://assets.yuanshen.site/icons/-1.png'
+export const FALLBACK_ITEM_ICON_URL = '/offline/ui/c331b6e132b2c4971071.png'
 
 /** 个人头像地址的回退 url */
-export const FALLBACK_AVATAR_URL = 'https://webstatic.mihoyo.com/upload/contentweb/2022/10/20/62cb7fb1815d9d05d3ece2e0d8e85c7d_8731082942818264376.png'
+export const FALLBACK_AVATAR_URL = '/offline/ui/5b5af08842956b97263a.png'

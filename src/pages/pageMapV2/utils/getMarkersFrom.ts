@@ -17,7 +17,7 @@ export const getMarkersFrom = (target: GenshinBaseLayer): IconLayer<MarkerWithRe
   }
 
   const isMarked = (marker: API.MarkerVo) => {
-    return archiveStore.currentArchive.body.Data_KYJG.has(marker.id!)
+    return archiveStore.currentArchive.Data_KYJG.has(marker.id!)
   }
 
   const getMarkerState = (marker: API.MarkerVo) => {
@@ -66,12 +66,12 @@ export const getMarkersFrom = (target: GenshinBaseLayer): IconLayer<MarkerWithRe
         conditionManager.conditionStateId,
       ],
       getIcon: [
-        archiveStore.currentArchive.body.Data_KYJG.size,
+        archiveStore.currentArchive.Data_KYJG.size,
       ],
       getColor: [
         stateManager.state.hover,
         stateManager.state.hideMarkedMarker,
-        archiveStore.currentArchive.body.Data_KYJG.size,
+        archiveStore.currentArchive.Data_KYJG.size,
       ],
       getSize: [
         stateManager.state.focus,

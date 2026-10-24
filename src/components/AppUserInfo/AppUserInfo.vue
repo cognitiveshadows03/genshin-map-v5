@@ -105,7 +105,7 @@ const tab = ref('archive')
   width: calc(100% - 8px);
   transform: translate(4px, 4px);
   height: 200px;
-  background-image: url('https://webstatic.mihoyo.com/upload/op-public/2023/07/03/f11c514e4517aa922209661d29bbd1cc_6447122669976408736.jpg');
+  background-image: url('/offline/ui/5d5f27453a0a6da9d7e1.jpg');
   background-size: cover;
   color: #F0EBE3;
   text-shadow: 0 0 2px #000;

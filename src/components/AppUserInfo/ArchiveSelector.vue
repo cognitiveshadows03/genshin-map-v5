@@ -15,11 +15,11 @@ const { archiveSlots } = storeToRefs(archiveStore)
 
 // 从米忽悠白嫖背景图
 const AREA_IMG_URLS: Record<string, string> = {
-  NA: 'https://ys.mihoyo.com/main/_nuxt/img/5c125a1.png',
-  MD: 'https://uploadstatic.mihoyo.com/contentweb/20200319/2020031921550320292.jpg',
-  LY: 'https://uploadstatic.mihoyo.com/contentweb/20200319/2020031921552395638.jpg',
-  DQ: 'https://uploadstatic.mihoyo.com/contentweb/20210719/2021071918001232800.jpg',
-  XM: 'https://webstatic.mihoyo.com/upload/contentweb/2022/08/15/8969f683b92839ac427c875d0d742be2_4825576482548821743.jpg',
+  NA: '/offline/ui/21b1ac108ae4f86055b5.png',
+  MD: '/offline/ui/89dbb96ffdd9fe151a07.jpg',
+  LY: '/offline/ui/ba3e44bc2f17ad6da49d.jpg',
+  DQ: '/offline/ui/f937ee7c5a6c9109e364.jpg',
+  XM: '/offline/ui/979d043b56270140da1e.jpg',
 }
 
 const lastestMarkerArea = asyncComputed(async () => {

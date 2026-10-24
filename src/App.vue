@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppBannerProvider, AppDialogProvider, AppDrawerProvider, AppLoadingPanel, AppUserInfo, GSMessageProvider } from '@/components'
+import { AppBannerProvider, AppDialogProvider, AppDrawerProvider, AppLoadingPanel, GSMessageProvider } from '@/components'
 import { visible as bannerVisible } from '@/hooks/useBanner/bannerContext'
 import { useBanner } from '@/hooks'
 import { useUserStore } from '@/stores'
@@ -31,5 +31,4 @@ const userStore = useUserStore()
   <AppDrawerProvider />
   <AppDialogProvider />
   <GSMessageProvider />
-  <AppUserInfo />
 </template>

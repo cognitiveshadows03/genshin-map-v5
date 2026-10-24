@@ -1,17 +1,13 @@
 <script lang="ts" setup>
-import { Delete, Refresh, WarnTriangleFilled } from '@element-plus/icons-vue'
+import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { SettingItem } from '.'
-import { localSettings, useAreaStore, useIconTagStore, useItemStore, useItemTypeStore, useMarkerStore } from '@/stores'
+import { useAreaStore, useIconTagStore, useItemStore, useItemTypeStore, useMarkerStore } from '@/stores'
 import { useFetchHook } from '@/hooks'
 import db from '@/database'
 
 interface StoreLike {
   total: number
-  updateAllLoading: boolean
-  updateAllRestTime: number
-  clearAll: () => Promise<void>
-  backgroundUpdate: () => Promise<void>
 }
 
 const storeList: { name: string; store: StoreLike }[] = [
@@ -24,60 +20,40 @@ const storeList: { name: string; store: StoreLike }[] = [
 
 const { refresh: resetDatabase } = useFetchHook({
   onRequest: async () => {
-    await ElMessageBox.confirm('本地数据库将被重建并刷新页面，确认操作？', '警告', {
+    await ElMessageBox.confirm('将从随附快照重建本地数据库；完成标记和筛选设置会保留。确认操作？', '恢复离线数据', {
       type: 'warning',
       confirmButtonClass: 'el-button--danger',
     })
-    await db.delete()
+    await Promise.all([
+      db.area.clear(),
+      db.itemType.clear(),
+      db.item.clear(),
+      db.iconTag.clear(),
+      db.marker.clear(),
+    ])
     window.location.reload()
   },
 })
-
-const isOfflineMode = import.meta.env.VITE_DEVELOPMENT_MODE === 'offline'
 </script>
 
 <template>
   <el-scrollbar>
     <div class="flex flex-col">
+      <el-alert type="info" center :closable="false" class="mb-2">
+        数据已随应用内置，不会执行联网更新。
+      </el-alert>
       <SettingItem
         v-for="store in storeList"
         :key="store.name"
         :label="`${store.name}数据`"
-        :content="`已存储${store.name}数据 ${store.store.total} 项，距离下次更新剩余 ${Math.floor(store.store.updateAllRestTime / 1000)} 秒。`"
-      >
-        <div class="whitespace-nowrap">
-          <el-button
-            plain
-            :loading="store.store.updateAllLoading"
-            :icon="Delete"
-            circle
-            type="danger"
-            @click="store.store.clearAll"
-          />
-          <el-button
-            plain
-            :loading="store.store.updateAllLoading"
-            :icon="Refresh"
-            circle
-            type="primary"
-            @click="store.store.backgroundUpdate"
-          />
-        </div>
-      </SettingItem>
-
+        :content="`本地快照已存储${store.name}数据 ${store.store.total} 项。`"
+      />
       <SettingItem
-        label="定时更新"
-        content="定时更新物品和点位数据的时间间隔（分钟），定时修改只会在下次更新后生效。"
+        label="从快照重建数据库"
+        content="当本地数据损坏时，使用应用目录中的 JSON 快照恢复。"
       >
-        <el-input-number v-model="localSettings.autoUpdateInterval" :min="10" :max="120" :step="10" />
-      </SettingItem>
-
-      <SettingItem
-        label="重建本地数据库"
-        content="当更新出现致命错误时尝试恢复"
-      >
-        <el-button type="danger" :disabled="isOfflineMode" :icon="WarnTriangleFilled" @click="resetDatabase">
-          重建本地数据库
+        <el-button type="danger" :icon="WarnTriangleFilled" @click="resetDatabase">
+          从快照重建
         </el-button>
       </SettingItem>
     </div>
