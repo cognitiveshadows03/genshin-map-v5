@@ -1,0 +1,114 @@
+name: Build official offline Windows client
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'official-client/**'
+      - '.github/workflows/official-offline-client.yml'
+
+concurrency:
+  group: official-offline-client-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+  KONGYING_HOTFIX_SHA256: '8f47b3b82fe80c7e6fcee75e79ab8bf2c5dfb584475c38b4da07ebb302706073'
+  KONGYING_NOTHOTFIX_SHA256: '6eb16a6e6949e69f512f384cc9ff616c29434fd60123b7353372ee7e9917abd7'
+
+jobs:
+  portable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: official-client/tools/requirements-build.txt
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install build dependencies
+        run: python -m pip install -r official-client/tools/requirements-build.txt
+
+      - name: Download and verify the pinned official client
+        run: python official-client/tools/fetch_official_client.py --output "$RUNNER_TEMP/KongYingMap-Rc1.0.1-portable.zip" --extract-to build/official
+
+      - name: Extract and verify the original managed assemblies
+        run: python official-client/tools/extract_managed_assemblies.py --client build/official --output build/managed-original
+
+      - name: Build the managed offline patcher
+        run: dotnet build official-client/tools/OfflinePatcher/OfflinePatcher.csproj --configuration Release --output build/patcher
+
+      - name: Apply and audit the managed offline patches
+        run: |
+          dotnet build/patcher/OfflinePatcher.dll patch build/managed-original/HotFix.dll build/managed-original/NotHotfix.dll build/managed-patched
+          mkdir -p build/reports
+          dotnet build/patcher/OfflinePatcher.dll audit build/managed-patched/HotFix.dll build/managed-patched/NotHotfix.dll build/reports/managed-audit.json
+
+      - name: Fetch and adapt official data for local-only use
+        run: python official-client/tools/fetch_official_data.py --output build/OfflineData --cache "$RUNNER_TEMP/kongying-data-cache" --workers 6
+
+      - name: Repack the official Windows client
+        run: python official-client/tools/repack_official_client.py --client build/official --managed build/managed-patched --data build/OfflineData --output build/client-offline
+
+      - name: Verify the assembled offline client
+        run: |
+          python official-client/tools/verify_offline_client.py --client build/client-offline --report build/reports/static-verification.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('build/client-offline/offline-build-report.json').read_text())
+          assert report['dllBundle']['replaced'] == ['HotFix.dll', 'NotHotfix.dll'], report['dllBundle']['replaced']
+          summary = {
+              'schemaVersion': 1,
+              'managedAuditPassed': True,
+              'staticVerificationPassed': True,
+              'interactiveWindowsRuntimeValidated': False,
+              'note': 'CI verifies the build, local data, disabled network entry points, and archive integrity. GUI map/filter/details/completion acceptance requires a Windows desktop test.'
+          }
+          Path('build/reports/runtime-summary.json').write_text(json.dumps(summary, indent=2), encoding='utf-8')
+          PY
+
+      - name: Package with maximum LZMA2 compression and test the archive
+        run: python official-client/tools/package_release.py --client build/client-offline --readme official-client/README.md --reports build/reports --output release/KongYingMap-Rc1.0.1-offline-portable.7z
+
+      - name: Add build summary
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          static = json.loads(Path('build/reports/static-verification.json').read_text())
+          package = json.loads(Path('release/KongYingMap-Rc1.0.1-offline-portable.7z.json').read_text())
+          print('### Official offline Windows client')
+          print(f"- Static verification: **PASS** ({static['data']['markers']:,} retained markers)")
+          print(f"- Archive: `{package['archive']}`")
+          print(f"- Download size: **{package['archiveBytes'] / 1024 / 1024:.1f} MiB**")
+          print(f"- Archive integrity: **PASS**")
+          print(f"- SHA-256: `{package['sha256']}`")
+          print('- Interactive Windows GUI acceptance: **not run in CI**')
+          PY
+
+      - name: Upload portable client, checksum, and reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: KongYingMap-Rc1.0.1-Offline-Windows-x64
+          path: |
+            release/*
+            build/reports/*.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,7 @@
+build/
+release/
+reports/
+__pycache__/
+*.pyc
+tools/OfflinePatcher/bin/
+tools/OfflinePatcher/obj/
