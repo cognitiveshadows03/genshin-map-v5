@@ -35,7 +35,7 @@ const toggleSelectedName = (name: string) => {
 
 const addCondition = async () => {
   if (validConditionName.value === 'temp') {
-    GSMessageService.info('不能与内置存储条件同名')
+    GSMessageService.info('This name is reserved for the built-in filter state')
     return
   }
   await conditionManager.saveState(validConditionName.value)
@@ -56,23 +56,23 @@ const addCondition = async () => {
   >
     <div class="gs-dark-card flex flex-col overflow-hidden genshin-text">
       <div class="text-xl text-center">
-        点位筛选条件预设
+        Marker filter presets
       </div>
 
       <GSDivider color="#76716A" />
 
       <div class="text-white pb-2">
-        · 新增预设
+        · New preset
       </div>
       <div class="flex gap-2">
-        <GSInput v-model="validConditionName" placeholder="请输入预设名称" />
+        <GSInput v-model="validConditionName" placeholder="Preset name" />
         <GSButton class="flex-1" icon="submit" :disabled="!validConditionName" @click="addCondition">
-          保存
+          Save
         </GSButton>
       </div>
 
       <div class="text-white pt-4 pb-2">
-        · 预设列表
+        · Saved presets
       </div>
       <el-scrollbar class="flex-1">
         <div class="h-full flex flex-col gap-1 overflow-auto">
@@ -103,7 +103,7 @@ const addCondition = async () => {
               <DeleteFilled />
             </el-icon>
           </template>
-          删除
+          Delete
         </GSButton>
         <GSButton
           :disabled="!selectedConditionName"
@@ -111,7 +111,7 @@ const addCondition = async () => {
           icon="submit"
           @click="() => conditionManager.loadState(selectedConditionName)"
         >
-          读取
+          Load
         </GSButton>
       </div>
     </div>

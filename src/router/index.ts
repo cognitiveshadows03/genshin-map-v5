@@ -36,7 +36,7 @@ router.afterEach(afterEachGuard())
 
 router.onError((err) => {
   ElMessage.error({
-    message: `无法导航到目标路由，原因为：${messageFrom(err)}`,
+    message: `Unable to navigate to the requested route: ${messageFrom(err)}`,
     offset: 48,
   })
 })

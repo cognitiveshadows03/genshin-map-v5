@@ -1,0 +1,31 @@
+appId: com.github.cognitiveshadows03.genshin-map-v5-offline
+productName: Genshin Offline Map
+copyright: Copyright © 2026
+compression: normal
+asar: true
+publish: []
+npmRebuild: false
+afterPack: scripts/after-pack.cjs
+
+directories:
+  app: electron
+  output: release
+
+# The renderer is already bundled. No production node_modules are required.
+files:
+  - "**/*"
+  - "!**/node_modules/**/*"
+extraResources:
+  - from: dist
+    to: dist
+
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  artifactName: Genshin-Offline-Map-${version}-Windows-x64.${ext}
+  icon: public/favicon.ico
+
+portable:
+  requestExecutionLevel: user

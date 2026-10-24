@@ -11,7 +11,7 @@ export interface Condition {
   items: number[]
 }
 
-const logger = new Logger('[条件管理器]')
+const logger = new Logger('[ConditionManager]')
 
 export interface MarkerWithRenderConfig extends API.MarkerVo {
   render: {
@@ -22,7 +22,7 @@ export interface MarkerWithRenderConfig extends API.MarkerVo {
 export class ConditionManager extends IconManager {
   // ========== 对外绑定的数据 ==========
 
-  get tabNames() { return ['地区', '分类', '物品'] }
+  get tabNames() { return ['Area', 'Category', 'Item'] }
 
   #tabKey = ref(0)
   get tabKey() { return this.#tabKey.value }
@@ -47,7 +47,7 @@ export class ConditionManager extends IconManager {
     // 切换子区域时，同时切换对应的底图
     const findLayer = LAYER_CONFIGS.find(({ areaCodes = [] }) => areaCodes.find(code => code === v) !== undefined)
     if (!findLayer)
-      throw new Error(`无法找到对应的底图设置 (areaCode: ${v})`)
+      throw new Error(`No bundled layer is configured for areaCode: ${v}`)
     useMap().map.value?.setBaseLayer(findLayer.code)
     this.#areaCode.value = v
     this.itemTypeId = undefined
@@ -208,7 +208,7 @@ export class ConditionManager extends IconManager {
     render = true,
   ) => this.#useRenderMission(async (requestRender) => {
     if (!area || !itemType)
-      throw new Error('未选择子地区或物品类型')
+      throw new Error('Select an area and category first')
 
     const id = this.#getConditionId(area.code as string, itemType.id as number)
 

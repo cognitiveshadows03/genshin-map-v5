@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import ElementPlus from 'element-plus'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import en from 'element-plus/es/locale/lang/en'
 import App from './App.vue'
 import './style/app.scss'
 import { router } from '@/router'
@@ -27,7 +27,7 @@ const start = async () => {
     .use(customPaint())
     .use(router)
     .use(ElementPlus, {
-      locale: zhCn,
+      locale: en,
     })
     .use(ElementIcons)
     .mount('#app')
@@ -36,6 +36,6 @@ const start = async () => {
 start().catch((error) => {
   const app = document.getElementById('app')
   if (app)
-    app.textContent = `离线地图初始化失败：${error instanceof Error ? error.message : String(error)}`
+    app.textContent = `Offline map initialization failed: ${error instanceof Error ? error.message : String(error)}`
   console.error(error)
 })

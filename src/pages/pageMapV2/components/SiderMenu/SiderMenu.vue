@@ -1,9 +1,12 @@
 <script lang="ts" setup>
 import {
   Search,
+  Setting,
   Sunny,
 } from '@element-plus/icons-vue'
 import { useCondition } from '../../hooks'
+import { AppSettings } from '@/components'
+import { useGlobalDialog } from '@/hooks'
 import { useAreaStore } from '@/stores'
 import db from '@/database'
 
@@ -25,6 +28,12 @@ const sort = (a: Sortable, b: Sortable) => {
 // 暗黑模式
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
+const { DialogService } = useGlobalDialog()
+const openSettings = () => DialogService.config({
+  title: 'Settings',
+  alignCenter: true,
+  width: 'fit-content',
+}).open(AppSettings)
 
 const virtualRef = ref<HTMLElement>()
 const tooltipContent = ref<string>()
@@ -120,14 +129,15 @@ onMounted(() => {
         <div class="bg-[--gs-fill-color] w-full rounded-md h-10 py-2 px-4 flex content-center">
           <img src="/offline/ui/927b2565912591ba1f6e.png" class="h-full">
           <div class="ml-2">
-            地图用户
+            Map User
           </div>
-          <el-button :icon="Sunny" circle @click="toggleDark()" />
+          <el-button :icon="Setting" circle aria-label="Open settings" @click="openSettings" />
+          <el-button :icon="Sunny" circle aria-label="Toggle color theme" @click="toggleDark()" />
         </div>
 
         <!-- 点位ID搜索栏 -->
         <el-input
-          v-model="markerSearch" placeholder="点位ID跳转(ID: 114514)"
+          v-model="markerSearch" placeholder="Jump to marker ID (e.g. 114514)"
           class="mt-3" :prefix-icon="Search" size="large"
           style="--el-input-border-radius: 0.375rem;"
         />

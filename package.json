@@ -1,8 +1,8 @@
 {
   "name": "genshin-map-v5-offline",
   "version": "0.2.0",
-  "description": "空荧酒馆原神地图 · 完全离线版",
-  "productName": "空荧酒馆 · 离线地图",
+  "description": "English-first, fully offline Genshin Impact map with Windows portable packaging",
+  "productName": "Genshin Offline Map",
   "author": "Alex Fang <deeno@qq.com>",
   "private": true,
   "scripts": {
@@ -14,7 +14,11 @@
     "start": "node scripts/serve-offline.mjs",
     "serve": "node scripts/serve-offline.mjs",
     "import:offline": "node scripts/import-offline-snapshot.mjs",
-    "verify:offline": "npm run build && node scripts/verify-offline.mjs"
+    "verify:offline": "npm run build && node scripts/verify-offline.mjs",
+    "desktop": "npm run build && electron .",
+    "pack:portable": "npm run build && electron-builder --win portable --publish never",
+    "pack:dir": "npm run build && electron-builder --dir --publish never",
+    "verify:desktop": "npm run build && node scripts/verify-electron.mjs"
   },
   "dependencies": {
     "@deck.gl/core": "^8.9.15",
@@ -24,7 +28,6 @@
     "@loaders.gl/core": "^3.4.0",
     "@vueuse/core": "^9.13.0",
     "@vueuse/rxjs": "^9.13.0",
-    "axios": "^1.4.0",
     "dayjs": "^1.11.7",
     "dexie": "^3.2.3",
     "element-plus": "2.3.4",
@@ -45,6 +48,8 @@
     "@vitejs/plugin-vue": "^4.2.3",
     "@vitejs/plugin-vue-jsx": "^3.0.1",
     "autoprefixer": "^10.4.14",
+    "electron": "^41.7.1",
+    "electron-builder": "^26.18.0",
     "eslint": "^8.37.0",
     "postcss": "^8.4.21",
     "prettier": "^2.8.7",
@@ -58,5 +63,6 @@
     "npm": ">=8",
     "yarn": "^1",
     "pnpm": "^8"
-  }
+  },
+  "main": "electron/main.cjs"
 }

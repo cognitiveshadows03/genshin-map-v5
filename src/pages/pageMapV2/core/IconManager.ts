@@ -31,7 +31,7 @@ export class IconManager {
     const iconTagMap = new Map<string, { url: string; index: number }>()
 
     if ((await db.iconTag.count()) === 0)
-      throw new Error('本地图标数据库为空，点位可能无法正常渲染，请更新本地图标数据库')
+      throw new Error('The local icon database is empty. Restore the bundled offline data.')
 
     let index = 0
     await db.iconTag.where('tag').anyOf(itemIconTags).each((iconTag) => {

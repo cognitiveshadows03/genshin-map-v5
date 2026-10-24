@@ -102,7 +102,7 @@ const toggleAllSelect = () => {
           </slot>
         </div>
         <div class="checkbox-item__content">
-          选择全部
+          Select all
         </div>
       </div>
 

@@ -2,7 +2,7 @@ import type { ComputedRef, Ref } from 'vue'
 import { liveQuery } from 'dexie'
 import { useSubscription } from '@vueuse/rxjs'
 import { array2Tree } from '@/utils'
-import { useFetchHook } from '@/hooks'
+import { useAsyncTask } from '@/hooks'
 import db from '@/database'
 
 export interface AreaListHookOptions {
@@ -30,10 +30,10 @@ export const useAreaList = (options: AreaListHookOptions = {}) => {
     rootId: -1,
   }))
 
-  const { refresh: updateAreaList, onSuccess, ...rest } = useFetchHook({
+  const { refresh: updateAreaList, onSuccess, ...rest } = useAsyncTask({
     immediate,
     loading,
-    onRequest: () => db.area.toArray(),
+    task: () => db.area.toArray(),
   })
 
   onSuccess((data) => {

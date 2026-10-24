@@ -44,7 +44,7 @@ provide(mapAffixLayerKey, mapAffixLayerRef)
           interactionLayerVisible ? 'pointer-events-auto' : '-translate-x-6',
         ]"
       >
-        <GSSwitch v-model="showOverlay" label="显示地下图层" size="large" />
+        <GSSwitch v-model="showOverlay" label="Underground overlay" label-position="left" size="large" />
       </div>
 
       <!-- 地下图层 -->

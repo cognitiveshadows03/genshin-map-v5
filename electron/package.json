@@ -1,0 +1,10 @@
+{
+  "name": "genshin-offline-map-runtime",
+  "version": "0.2.0",
+  "private": true,
+  "productName": "Genshin Offline Map",
+  "author": "Alex Fang <deeno@qq.com>",
+  "description": "Dependency-free Electron runtime for the bundled offline map",
+  "main": "main.cjs",
+  "dependencies": {}
+}

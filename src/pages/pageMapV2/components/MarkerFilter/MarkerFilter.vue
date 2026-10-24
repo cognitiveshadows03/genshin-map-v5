@@ -86,13 +86,13 @@ const itemCountMap = asyncComputed(async () => {
   <div class="marker-filter h-full flex flex-col">
     <FilterTabs v-model="conditionManager.tabKey" :tab-names="conditionManager.tabNames">
       <template #key-0>
-        {{ conditionManager.area?.name ?? '无' }}
+        {{ conditionManager.area?.name ?? 'None' }}
       </template>
       <template #key-1>
-        {{ conditionManager.itemType?.name ?? '无' }}
+        {{ conditionManager.itemType?.name ?? 'None' }}
       </template>
       <template #key-2>
-        {{ conditionManager.itemIds.length ? `已选 ${conditionManager.itemIds.length} 项` : '无' }}
+        {{ conditionManager.itemIds.length ? `${conditionManager.itemIds.length} selected` : 'None' }}
       </template>
     </FilterTabs>
 
@@ -182,7 +182,7 @@ const itemCountMap = asyncComputed(async () => {
             <DeleteFilled />
           </el-icon>
         </template>
-        清空条件
+        Clear filters
       </GSButton>
       <GSButton class="flex-1" @click="conditionManagerVisible = true">
         <template #icon>
@@ -190,7 +190,7 @@ const itemCountMap = asyncComputed(async () => {
             <IconSetting />
           </el-icon>
         </template>
-        管理预设
+        Manage presets
       </GSButton>
     </div>
 

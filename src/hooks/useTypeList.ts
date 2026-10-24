@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useSubscription } from '@vueuse/rxjs'
 import type { FetchHookOptions } from '@/hooks'
-import { useFetchHook } from '@/hooks'
+import { useAsyncTask } from '@/hooks'
 import { array2Tree } from '@/utils'
 import db from '@/database'
 
@@ -25,10 +25,10 @@ export const useTypeList = (options: FetchHookOptions<API.RPageListVoItemTypeVo>
     return seed
   }, {} as Record<number, API.ItemTypeVo>))
 
-  const { refresh: updateTypeList, onSuccess, ...rest } = useFetchHook({
+  const { refresh: updateTypeList, onSuccess, ...rest } = useAsyncTask({
     immediate,
     loading: scopedLoading ?? loading,
-    onRequest: () => db.itemType.toArray(),
+    task: () => db.itemType.toArray(),
   })
 
   useSubscription(liveQuery(() => db.itemType.toCollection()).subscribe(updateTypeList))

@@ -1,5 +1,6 @@
 import { fetchOfflineJson } from './assets'
 import { preloadIconPack } from './iconPack'
+import { getMarkerLanguage } from './language'
 import db from '@/database'
 
 export const OFFLINE_AREA_CODE = 'A:OFFICIAL:TEYVAT'
@@ -30,7 +31,7 @@ const ensureLocalUser = () => {
   localStorage.setItem('__ys_user_info', JSON.stringify({
     id: 1,
     username: 'offline',
-    nickname: '离线用户',
+    nickname: 'Local User',
     logo: '',
   }))
   localStorage.removeItem('__ys_dadian_auth')
@@ -43,9 +44,10 @@ const ensureLocalUser = () => {
 export const bootstrapOffline = async () => {
   ensureLocalUser()
 
+  const language = getMarkerLanguage()
   const [meta, labels, allPoints, iconUrls] = await Promise.all([
     fetchOfflineJson<OfficialMeta>('meta.json'),
-    fetchOfflineJson<OfficialLabel[]>('labels.json'),
+    fetchOfflineJson<OfficialLabel[]>(language === 'en' ? 'labels-en.json' : 'labels.json'),
     fetchOfflineJson<OfficialPoint[]>('points.json'),
     preloadIconPack(),
   ])
@@ -64,7 +66,7 @@ export const bootstrapOffline = async () => {
     {
       id: 1,
       parentId: -1,
-      name: '离线地图',
+      name: language === 'en' ? 'Offline Map' : '离线地图',
       code: OFFLINE_PARENT_AREA_CODE,
       isFinal: false,
       hiddenFlag: 0,
@@ -73,9 +75,9 @@ export const bootstrapOffline = async () => {
     {
       id: AREA_ID,
       parentId: 1,
-      name: '提瓦特',
+      name: language === 'en' ? 'Teyvat' : '提瓦特',
       code: OFFLINE_AREA_CODE,
-      content: `本地快照 ${meta.mapVersion}`,
+      content: `${language === 'en' ? 'Local snapshot' : '本地快照'} ${meta.mapVersion}`,
       iconTag: categories[0]?.children[0] ? iconTagFor(categories[0].children[0].id) : undefined,
       isFinal: true,
       hiddenFlag: 0,
@@ -126,7 +128,7 @@ export const bootstrapOffline = async () => {
 
   const markers: API.MarkerVo[] = points.map(point => ({
     id: point.id,
-    markerTitle: itemNames.get(point.labelId) ?? '地图点位',
+    markerTitle: itemNames.get(point.labelId) ?? (language === 'en' ? 'Map marker' : '地图点位'),
     position: `${point.x},${point.y}`,
     itemList: [{
       itemId: point.labelId,
@@ -139,8 +141,9 @@ export const bootstrapOffline = async () => {
     extra: {},
   }))
 
+  const snapshotVersion = `${meta.mapVersion}:${language}`
   const previous = await db.md5.get(SNAPSHOT_KEY)
-  const isComplete = previous?.value === meta.mapVersion
+  const isComplete = previous?.value === snapshotVersion
     && await db.area.count() === areas.length
     && await db.itemType.count() === itemTypes.length
     && await db.marker.count() === markers.length
@@ -162,7 +165,7 @@ export const bootstrapOffline = async () => {
       await db.iconTag.bulkPut(iconTags)
       for (let offset = 0; offset < markers.length; offset += 5000)
         await db.marker.bulkPut(markers.slice(offset, offset + 5000))
-      await db.md5.put({ id: SNAPSHOT_KEY, value: meta.mapVersion })
+      await db.md5.put({ id: SNAPSHOT_KEY, value: snapshotVersion })
     })
   }
   else {
@@ -171,7 +174,8 @@ export const bootstrapOffline = async () => {
   }
 
   return {
-    version: meta.mapVersion,
+    version: snapshotVersion,
+    language,
     areas: areas.length,
     categories: itemTypes.length,
     items: items.length,

@@ -1,33 +1,35 @@
 <script lang="ts" setup>
 import { SettingItem } from '.'
 import { localSettings } from '@/stores'
+import { MARKER_LANGUAGE_KEY } from '@/offline'
+import type { MarkerLanguage } from '@/offline'
 
-/** 计算缓存大小 */
+const markerLanguage = useLocalStorage<MarkerLanguage>(MARKER_LANGUAGE_KEY, 'en')
+const reloadForLanguage = () => window.location.reload()
+
 const usageStorage = ref(0)
 const quotaStorage = ref(0)
 const usagePercentage = computed(() => Math.floor(100 * (usageStorage.value / quotaStorage.value) || 0))
 const calculateCaches = async () => {
-  const { usage = 0, quota = 0 } = (await navigator.storage.estimate())
-  usageStorage.value = usage / (2 ** (10 * 3))
+  const { usage = 0, quota = 0 } = await navigator.storage.estimate()
+  usageStorage.value = usage / 10 ** 9
   quotaStorage.value = quota / 10 ** 9
 }
 calculateCaches()
 
-/** 删除全部缓存 */
-const cacheLaoding = ref(false)
-const cleatAllCaches = async () => {
+const cacheLoading = ref(false)
+const clearAllCaches = async () => {
   try {
-    cacheLaoding.value = true
+    cacheLoading.value = true
     const cacheNames = await caches.keys()
-    const missions = cacheNames.map(cacheName => caches.delete(cacheName))
-    await Promise.all(missions)
+    await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)))
     await calculateCaches()
   }
   catch {
-    // no action
+    // The app can recreate its versioned pack cache on the next launch.
   }
   finally {
-    cacheLaoding.value = false
+    cacheLoading.value = false
   }
 }
 </script>
@@ -35,27 +37,42 @@ const cleatAllCaches = async () => {
 <template>
   <el-scrollbar>
     <div class="flex flex-col">
-      <SettingItem label="自动定位加载点" content="【实验功能】点位加载完毕后移动到点集的几何中心">
+      <SettingItem
+        label="Marker language"
+        content="English is the default. Changing language rebuilds local names while preserving completion and filter data."
+      >
+        <el-select v-model="markerLanguage" aria-label="Marker language" @change="reloadForLanguage">
+          <el-option label="English" value="en" />
+          <el-option label="简体中文" value="zh-CN" />
+        </el-select>
+      </SettingItem>
+
+      <SettingItem
+        label="Center on filtered markers"
+        content="Move to the geometric center after the selected markers finish loading."
+      >
         <el-switch v-model="localSettings.moveToCenter" />
       </SettingItem>
 
-      <SettingItem label="自动跳转筛选器" content="筛选器满足选择条件时自动跳转到下一级">
+      <SettingItem
+        label="Advance filters automatically"
+        content="Move to the next filter level after an area or category is selected."
+      >
         <el-switch v-model="localSettings.autoTurnNext" />
       </SettingItem>
 
-      <SettingItem label="更新提醒" content="是否需要为成功更新的数据弹出消息提示">
-        <el-switch v-model="localSettings.noticeDataUpdated" />
-      </SettingItem>
-
-      <SettingItem label="缓存">
+      <SettingItem label="Local storage">
         <template #content>
           <div class="flex flex-col gap-1">
             <el-progress class="progress-base-radius" text-inside :stroke-width="20" :percentage="usagePercentage" />
-            <div>缓存使用情况： {{ usageStorage.toFixed(1) }} / {{ quotaStorage.toFixed(1) }} GB。存储配额由浏览器给出，并非实际可用空间。</div>
+            <div>
+              Estimated storage: {{ usageStorage.toFixed(1) }} / {{ quotaStorage.toFixed(1) }} GB.
+              The quota is reported by the browser and is not guaranteed free space.
+            </div>
           </div>
         </template>
-        <el-button :loading="cacheLaoding" @click="cleatAllCaches">
-          删除缓存
+        <el-button :loading="cacheLoading" @click="clearAllCaches">
+          Clear pack cache
         </el-button>
       </SettingItem>
     </div>

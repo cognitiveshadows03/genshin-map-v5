@@ -5,8 +5,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     meta: {
-      title: '空荧酒馆',
-      preload: true,
+      title: 'Genshin Offline Map',
       icon: 'MapLocation',
     },
     component: () => import('@/pages/pageMapV2/PageMapV2.vue'),

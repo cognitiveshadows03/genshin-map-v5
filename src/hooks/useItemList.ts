@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import type { Collection } from 'dexie'
 import type { FetchHookOptions } from '@/hooks'
-import { useFetchHook } from '@/hooks'
+import { useAsyncTask } from '@/hooks'
 import db from '@/database'
 
 interface ItemListHookOptions extends FetchHookOptions<API.RPageListVoItemVo> {
@@ -38,10 +38,10 @@ export const useItemList = (options: ItemListHookOptions = {}) => {
     return cachedItemMap[itemId]
   }
 
-  const { refresh: updateItemList, onSuccess, ...rest } = useFetchHook({
+  const { refresh: updateItemList, onSuccess, ...rest } = useAsyncTask({
     immediate,
     loading: scopedLoading ?? loading,
-    onRequest: async () => {
+    task: async () => {
       const { areaIdList = [], typeIdList = [], current = 1, size = 10 } = fetchParams.value ?? {}
       const typeId = typeIdList[0]
       const exp = new RegExp(`${filterParams.value?.name ?? ''}`)

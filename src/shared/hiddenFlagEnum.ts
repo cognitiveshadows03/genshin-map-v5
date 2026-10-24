@@ -9,7 +9,7 @@ export enum HiddenFlagEnum {
 }
 
 export const HIDDEN_FLAG_NAM_MAP: Record<string, string> = {
-  [HiddenFlagEnum.SHOW]: '显示',
-  [HiddenFlagEnum.HIDDEN]: '隐藏',
-  [HiddenFlagEnum.NEIGUI]: '测试服',
+  [HiddenFlagEnum.SHOW]: 'Visible',
+  [HiddenFlagEnum.HIDDEN]: 'Hidden',
+  [HiddenFlagEnum.NEIGUI]: 'Beta',
 }

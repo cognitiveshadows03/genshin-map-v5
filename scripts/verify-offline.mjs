@@ -50,10 +50,11 @@ const walk = async (directory) => {
 
 try {
   // ---------- Static bundle verification ----------
-  const [tiles, icons, source, labels, points] = await Promise.all([
+  const [tiles, icons, source, labels, chineseLabels, points] = await Promise.all([
     verifyPack('tiles', 'genshin-offline-tile-pack'),
     verifyPack('icons', 'genshin-offline-icon-pack'),
     readJson('public/offline/source.json'),
+    readJson('public/offline/labels-en.json'),
     readJson('public/offline/labels.json'),
     readJson('public/offline/points.json'),
   ])
@@ -66,6 +67,19 @@ try {
     }
   }
   flattenLabels(labels)
+  const collectLabelIds = (nodes, ids = []) => {
+    for (const node of nodes) {
+      ids.push(node.id)
+      collectLabelIds(node.children ?? [], ids)
+    }
+    return ids
+  }
+  assert.deepEqual(
+    collectLabelIds(chineseLabels).sort((a, b) => a - b),
+    allLabels.map(label => label.id).sort((a, b) => a - b),
+    'English and Chinese label IDs do not match',
+  )
+  assert.equal(source.defaultLanguage, 'en')
   const labelMap = new Map(allLabels.map(label => [label.id, label]))
   const surfaceLabelIds = new Set(surfacePoints.map(point => point.labelId))
   const usedCategoryCount = labels.filter(category => (category.children ?? []).some(label => surfaceLabelIds.has(label.id))).length
@@ -97,6 +111,9 @@ try {
   Object.assign(report.static, {
     tiles: { entries: tiles.entries, bytes: tiles.bytes, sha256: tiles.sha256 },
     icons: { entries: icons.entries, bytes: icons.bytes, sha256: icons.sha256 },
+    defaultLanguage: source.defaultLanguage,
+    languages: source.languages,
+    matchingLanguageLabelIds: allLabels.length,
     surfaceMarkers: surfacePoints.length,
     surfaceItems: surfaceLabelIds.size,
     usedCategories: usedCategoryCount,
@@ -173,7 +190,8 @@ try {
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 60000 })
   await page.waitForSelector('canvas', { timeout: 60000 })
   await page.waitForTimeout(8000)
-  assert(!(await page.locator('body').innerText()).includes('离线地图初始化失败'))
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en')
+  assert(!(await page.locator('body').innerText()).includes('Offline map initialization failed'))
   const firstScreenshot = resolve(artifacts, 'offline-first-launch.png')
   await page.screenshot({ path: firstScreenshot })
   assert((await stat(firstScreenshot)).size > 100000, 'First-launch map canvas appears blank')
@@ -221,8 +239,8 @@ try {
 
   // Area → category → item, using the actual UI.
   await page.locator('.sidebar-control-layer > div > svg').first().click()
-  await page.locator('.sider-menu .itemType').filter({ hasText: '提瓦特' }).click()
-  await page.locator('.sider-menu .itemType').filter({ hasText: '传送点' }).click()
+  await page.locator('.sider-menu .itemType').filter({ hasText: 'Teyvat' }).click()
+  await page.locator('.sider-menu .itemType').filter({ hasText: 'Waypoints' }).click()
   await page.waitForSelector('.sider-menu .item', { timeout: 30000 })
   const selectedItem = await page.locator('.sider-menu .item').first().innerText()
   await page.locator('.sider-menu .item').first().click()
@@ -271,7 +289,7 @@ try {
   assert(decodedIcon.width > 0 && decodedIcon.height > 0)
   assert.equal((await getCounts()).marker, surfacePoints.length)
 
-  for (const required of ['meta.json', 'labels.json', 'points.json', 'tiles-index.json', 'tiles.pack', 'icons-index.json', 'icons.pack'])
+  for (const required of ['meta.json', 'labels-en.json', 'points.json', 'tiles-index.json', 'tiles.pack', 'icons-index.json', 'icons.pack'])
     assert(requests.some(url => new URL(url).pathname.endsWith(`/offline/${required}`)), `First launch did not load local ${required}`)
   assert.deepEqual(externalAttempts, [], 'External network request attempted')
   assert.deepEqual(failedRequests, [], 'Failed browser request')
@@ -279,6 +297,7 @@ try {
 
   Object.assign(report.browser, {
     freshProfile: true,
+    defaultLanguage: 'en',
     serviceWorkersBlocked: true,
     externalRequestsBlocked: true,
     firstLaunchCanvas: true,

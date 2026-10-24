@@ -12,7 +12,5 @@
   ],
   "minZoom": -3,
   "maxZoom": 0,
-  "tileUrlTemplate": "tiles/{x}_{y}_{suffix}.webp",
-  "cdnTileUrlTemplate": "https://act-webstatic.mihoyo.com/ys-map-op/map/{mapId}/{mapVersion}/{x}_{y}_{suffix}.webp",
   "fetchedAt": "2026-10-19T15:29:50.223Z"
 }

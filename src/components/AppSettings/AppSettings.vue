@@ -1,30 +1,26 @@
 <script lang="ts" setup>
-import { SettingCommon, SettingDatabase, SettingEasterEgg, SettingShortcutKey } from '.'
+import { SettingCommon, SettingDatabase, SettingShortcutKey } from '.'
 
 const activeName = ref('common')
 </script>
 
 <template>
   <div class="setting-panel p-4 flex flex-col gap-2">
-    <el-alert type="warning" center :closable="false">
-      设置云同步还在开发中，当前设置仅在该浏览器下生效。
+    <el-alert type="info" center :closable="false">
+      Settings, filters, and completion progress are stored locally on this device.
     </el-alert>
 
     <el-tabs v-model="activeName" type="border-card" class="setting-tabs">
-      <el-tab-pane label="常规" name="common" lazy>
+      <el-tab-pane label="General" name="common" lazy>
         <SettingCommon />
       </el-tab-pane>
 
-      <el-tab-pane label="数据库" name="database" lazy>
+      <el-tab-pane label="Local Data" name="database" lazy>
         <SettingDatabase />
       </el-tab-pane>
 
-      <el-tab-pane label="快捷键" name="shortcut-keys" lazy>
+      <el-tab-pane label="Shortcuts" name="shortcut-keys" lazy>
         <SettingShortcutKey />
-      </el-tab-pane>
-
-      <el-tab-pane label="彩蛋" name="easter-egg" lazy>
-        <SettingEasterEgg />
       </el-tab-pane>
     </el-tabs>
   </div>

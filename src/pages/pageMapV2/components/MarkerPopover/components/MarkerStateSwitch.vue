@@ -50,7 +50,7 @@ const toggleValue = () => {
         />
       </div>
       <div class="flex-1 text-center text-sm">
-        {{ modelValue ? '已完成' : '未完成' }}
+        {{ modelValue ? 'Completed' : 'Not completed' }}
       </div>
     </div>
   </div>

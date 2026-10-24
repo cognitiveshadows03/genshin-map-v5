@@ -32,7 +32,7 @@ defineEmits<{
       <div class="icon">
         <DeleteFilled />
       </div>
-      删除
+      Delete
     </div>
   </div>
 </template>

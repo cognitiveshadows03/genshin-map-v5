@@ -1,13 +1,12 @@
 <script lang="ts" setup>
 import SettingItem from './SettingItem.vue'
-
-// import { localSettings } from '@/stores'
 </script>
 
 <template>
   <el-scrollbar>
     <div class="flex flex-col">
-      <SettingItem label="快捷键" content="地图界面快捷键设置（开发中）" />
+      <SettingItem label="Keyboard shortcuts" content="Additional map shortcuts are not currently configurable." />
+      <SettingItem label="Toggle sidebar" content="Press the backquote key (`) to show or hide the map sidebar." />
     </div>
   </el-scrollbar>
 </template>

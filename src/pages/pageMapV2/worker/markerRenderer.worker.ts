@@ -18,7 +18,7 @@ const fetchAsBMP = async (url: string) => {
     const blob = await fetch(url).then(res => res.blob())
     const bmp = await createImageBitmap(blob)
     if (!bmp?.width || !bmp?.height)
-      throw new Error(`请求图像 "${decodeURIComponent(url)}" 失败`)
+      throw new Error(`Unable to load bundled image "${decodeURIComponent(url)}"`)
     return bmp
   }
   catch {
@@ -39,7 +39,7 @@ const ANG2RAD = Math.PI / 180
 const renderMarker = async (ev: MessageEvent<Map<string, { url: string; index: number }>>) => {
   try {
     if (!(ev.data instanceof Map))
-      throw new Error(`预期类型 (Map) 与实际类型 (${getPrototypeOf(ev.data)}) 不符`)
+      throw new Error(`Expected a Map but received (${getPrototypeOf(ev.data)})`)
 
     // 请求底图
     const icons: Promise<ImageBitmap>[] = []

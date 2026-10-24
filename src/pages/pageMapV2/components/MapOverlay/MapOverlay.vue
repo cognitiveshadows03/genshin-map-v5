@@ -11,7 +11,7 @@ const { map } = useMap()
 
 const getOverlayManager = () => new Promise<OverlayManager>((resolve, reject) => {
   if (!map.value?.baseLayer)
-    return reject(new Error('获取底图实例失败'))
+    return reject(new Error('Unable to get the base map instance'))
   resolve(map.value.baseLayer.overlayManager)
 })
 

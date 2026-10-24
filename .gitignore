@@ -5,6 +5,7 @@ node_modules
 # build
 dist
 build
+release
 
 # Log files
 npm-debug.log*

@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useSubscription } from '@vueuse/rxjs'
 import type { FetchHookOptions } from '@/hooks'
-import { useFetchHook } from '@/hooks'
+import { useAsyncTask } from '@/hooks'
 import db from '@/database'
 
 interface IconsHookOptions extends FetchHookOptions<API.RPageListVoIconVo> {
@@ -22,10 +22,10 @@ export const useIconList = (options: IconsHookOptions = {}) => {
     return seed
   }, {} as Record<string, string>))
 
-  const { refresh: updateIconList, onSuccess, ...rest } = useFetchHook({
+  const { refresh: updateIconList, onSuccess, ...rest } = useAsyncTask({
     immediate,
     loading,
-    onRequest: () => db.iconTag.toArray(),
+    task: () => db.iconTag.toArray(),
   })
 
   useSubscription(liveQuery(() => db.iconTag.toCollection()).subscribe(updateIconList))

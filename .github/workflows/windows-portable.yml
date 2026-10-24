@@ -1,0 +1,53 @@
+name: Build Windows portable app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+concurrency:
+  group: windows-portable-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install test browser
+        run: npx playwright install chromium
+
+      - name: Verify English offline build
+        run: npm run verify:offline
+
+      - name: Verify desktop shell and language switching
+        run: node scripts/verify-electron.mjs
+
+      - name: Build Windows x64 portable executable
+        run: npx electron-builder --win portable --publish never
+
+      - name: Upload portable executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Genshin-Offline-Map-Windows-x64
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30

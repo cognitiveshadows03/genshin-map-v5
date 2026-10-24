@@ -246,7 +246,7 @@ export class GenshinMap extends Deck {
           ? `id: ${info.sourceLayer.id}
             x: ${Math.floor(x) - center[0]}, y: ${Math.floor(y) - center[1]}
             zoom: ${info.viewport?.zoom?.toFixed(2)}`
-          : '前面的区域，以后再来探索吧！'
+          : 'This area is not included in the offline snapshot.'
       return renderText
     }
 

@@ -75,10 +75,36 @@ await writeFile(resolve(target, 'icons-index.json'), `${JSON.stringify({
   entries: icons.entries,
 })}\n`)
 
-const meta = JSON.parse(await readFile(resolve(target, 'meta.json'), 'utf8'))
+const rawMeta = JSON.parse(await readFile(resolve(target, 'meta.json'), 'utf8'))
+const { mapId, mapVersion, gameVersion, origin, totalSize, minZoom, maxZoom, fetchedAt } = rawMeta
+const meta = { mapId, mapVersion, gameVersion, origin, totalSize, minZoom, maxZoom, fetchedAt }
+await writeFile(resolve(target, 'meta.json'), `${JSON.stringify(meta, null, 2)}\n`)
 const labels = JSON.parse(await readFile(resolve(target, 'labels.json'), 'utf8'))
 const points = JSON.parse(await readFile(resolve(target, 'points.json'), 'utf8'))
 const surfacePoints = points.filter(point => !point.z)
+let englishLabels
+try {
+  englishLabels = JSON.parse(await readFile(resolve(target, 'labels-en.json'), 'utf8'))
+}
+catch (error) {
+  if (error.code !== 'ENOENT')
+    throw error
+}
+if (englishLabels) {
+  const collectIds = (nodes, ids = new Set()) => {
+    for (const node of nodes) {
+      ids.add(node.id)
+      collectIds(node.children ?? [], ids)
+    }
+    return ids
+  }
+  const sourceIds = collectIds(labels)
+  const englishIds = collectIds(englishLabels)
+  const missing = [...sourceIds].filter(id => !englishIds.has(id))
+  const extra = [...englishIds].filter(id => !sourceIds.has(id))
+  if (missing.length || extra.length)
+    throw new Error(`English labels do not match this snapshot (missing: ${missing.length}, extra: ${extra.length}). Update labels-en.json before importing.`)
+}
 await writeFile(resolve(target, 'source.json'), `${JSON.stringify({
   snapshot: 'https://github.com/kxxoling/genshin-map-data',
   upstream: 'HoYoverse public interactive map snapshot',
@@ -92,6 +118,8 @@ await writeFile(resolve(target, 'source.json'), `${JSON.stringify({
   iconBytes: icons.byteLength,
   iconSha256: icons.sha256,
   categoryCount: labels.length,
+  defaultLanguage: englishLabels ? 'en' : 'zh-CN',
+  languages: englishLabels ? ['en', 'zh-CN'] : ['zh-CN'],
   surfaceMarkerCount: surfacePoints.length,
   excludedFloorMarkerCount: points.length - surfacePoints.length,
 }, null, 2)}\n`)

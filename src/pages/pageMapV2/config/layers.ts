@@ -23,7 +23,7 @@ export interface LayerConfig {
 export const LAYER_CONFIGS: LayerConfig[] = [
   {
     code: 'teyvat',
-    name: '提瓦特（离线快照）',
+    name: 'Teyvat (offline snapshot)',
     extension: 'webp',
     size: [36864, 18432],
     tilesOffset: [0, 0],

@@ -84,7 +84,7 @@ const removeItem = (item: API.ItemVo) => {
       <div class="flex-1 overflow-y-auto scrollbar">
         <div class="w-full grid gap-2">
           <div class="flex flex-col item">
-            <el-tooltip effect="dark" content="清除物品" placement="right">
+            <el-tooltip effect="dark" content="Clear selected items" placement="right">
               <div class="item-image" @click="conditionManager.clearCondition()">
                 <!-- <img :src="icons.get(item.iconTag || '')?.url" class="m-auto w-auto h-full"> -->
                 <svg
