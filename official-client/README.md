@@ -74,6 +74,8 @@ The **Build official offline Windows client** workflow downloads the pinned offi
 
 The workflow runs for changes under `official-client/` and can also be started manually with **Run workflow**. Its uploaded artifact is named `KongYingMap-Rc1.0.1-Offline-Windows-x64`. A green CI run proves the managed/static/package checks passed; it is not a substitute for interactive Windows acceptance testing.
 
+Packaging compares solid LZMA2 `9e` archives with 64 MiB and 256 MiB dictionaries, verifies both, and keeps only the smaller one. The selected dictionary and exact saving are recorded in the package report. A 256 MiB dictionary can require approximately 256 MiB of memory during extraction. The official Unity bundles are already compressed, so the improvement may be modest; required assets are not removed for size.
+
 ## Rebuild tools
 
 The scripts in `tools/` are the reproducible build implementation:
@@ -85,6 +87,7 @@ The scripts in `tools/` are the reproducible build implementation:
 - `repack_official_client.py` — copies the untouched official client, replaces the YooAsset DLL bundle, applies the guarded early-AOT offline patches, updates the real manifest/hash, and installs local data under `Map_Data`.
 - `verify_offline_client.py` — independent static verification of the assembled client.
 - `runtime_smoke.py` — isolated Wine/Xvfb runtime checks with fresh profiles, memory samples, screenshots, and guaranteed process cleanup.
-- `package_release.py` — solid 7z / LZMA2 `9e` packaging, full decompression/CRC verification, and SHA-256 output.
+- `package_release.py` — configurable-window solid 7z / LZMA2 `9e` packaging, full decompression/CRC verification, and SHA-256 output.
+- `select_compression_candidate.py` — validates competing archives and keeps only the smallest.
 
 The large official archive, caches, intermediate clients, and final package are not committed to the source repository. The final archive uses maximum LZMA2 compression. Optional `xmoverlay` bundles are retained because the main scene declares dependencies on them.

@@ -18,7 +18,11 @@ def main():
     parser.add_argument("--readme", type=Path, required=True)
     parser.add_argument("--reports", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--dictionary-mib", type=int, default=64,
+                        help="LZMA2 dictionary size in MiB (default: 64)")
     args = parser.parse_args()
+    if not 1 <= args.dictionary_mib <= 1024:
+        raise ValueError("LZMA2 dictionary must be between 1 and 1024 MiB")
     client = args.client.resolve()
     assert (client / "Map.exe").is_file()
     assert (client / "Map_Data" / "Resources" / "item_selected.json").read_text() == "[]", "Reset completion before packaging"
@@ -36,7 +40,8 @@ def main():
     extracted_bytes = sum(p.stat().st_size for p in files)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     if args.output.exists(): args.output.unlink()
-    filters = [{"id": lzma.FILTER_LZMA2, "preset": 9 | lzma.PRESET_EXTREME}]
+    filters = [{"id": lzma.FILTER_LZMA2, "preset": 9 | lzma.PRESET_EXTREME,
+                "dict_size": args.dictionary_mib * 1024 * 1024}]
     with py7zr.SevenZipFile(args.output, "w", filters=filters) as archive:
         for index, path in enumerate(files, 1):
             archive.write(path, arcname=str(path.relative_to(client)))
@@ -57,6 +62,7 @@ def main():
         "extractedBytes": extracted_bytes, "archiveBytes": archive_bytes,
         "ratio": round(archive_bytes / extracted_bytes, 6), "savedBytes": extracted_bytes - archive_bytes,
         "compression": "solid 7z, LZMA2 preset 9 | PRESET_EXTREME",
+        "dictionaryMiB": args.dictionary_mib,
         "integrityTestPassed": True, "sha256": digest,
     }
     args.output.with_suffix(args.output.suffix + ".json").write_text(json.dumps(report, indent=2), encoding="utf-8")

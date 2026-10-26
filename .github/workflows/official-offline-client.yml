@@ -84,8 +84,11 @@ jobs:
           Path('build/reports/runtime-summary.json').write_text(json.dumps(summary, indent=2), encoding='utf-8')
           PY
 
-      - name: Package with maximum LZMA2 compression and test the archive
-        run: python official-client/tools/package_release.py --client build/client-offline --readme official-client/README.md --reports build/reports --output release/KongYingMap-Rc1.0.1-offline-portable.7z
+      - name: Compare LZMA2 windows, keep the smallest archive, and test integrity
+        run: |
+          python official-client/tools/package_release.py --client build/client-offline --readme official-client/README.md --reports build/reports --output release/.candidate-d64.7z --dictionary-mib 64
+          python official-client/tools/package_release.py --client build/client-offline --readme official-client/README.md --reports build/reports --output release/.candidate-d256.7z --dictionary-mib 256
+          python official-client/tools/select_compression_candidate.py --output release/KongYingMap-Rc1.0.1-offline-portable.7z --candidates release/.candidate-d64.7z release/.candidate-d256.7z
 
       - name: Add build summary
         run: |
@@ -98,6 +101,8 @@ jobs:
           print(f"- Static verification: **PASS** ({static['data']['markers']:,} retained markers)")
           print(f"- Archive: `{package['archive']}`")
           print(f"- Download size: **{package['archiveBytes'] / 1024 / 1024:.1f} MiB**")
+          print(f"- LZMA2 dictionary: **{package['dictionaryMiB']} MiB** (64/256 MiB candidates compared)")
+          print(f"- Saved vs 64 MiB candidate: **{package['savedBytesVsBaseline'] / 1024 / 1024:.2f} MiB**")
           print(f"- Archive integrity: **PASS**")
           print(f"- SHA-256: `{package['sha256']}`")
           print('- Interactive Windows GUI acceptance: **not run in CI**')
