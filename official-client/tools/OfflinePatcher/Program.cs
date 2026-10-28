@@ -80,6 +80,10 @@ static class Program
             Calls(startup, "UnityEngine.MonoBehaviour", "Invoke") && Calls(startup, "System.GC", "Collect") &&
             Calls(offlineScene, "TEngine.SceneModule", "LoadScene") &&
             !Calls(startup, "MyUnityWebRequest", "DownloadFile") && !Calls(startup, "UnityEngine.MonoBehaviour", "InvokeRepeating"));
+        var sceneCompleted = GetMethod(downloadType, "OfflineSceneCompleted");
+        Check("scene transition retries while Main is busy and reports completion", Calls(offlineScene,
+            "UnityEngine.MonoBehaviour", "Invoke") && Calls(sceneCompleted, "YooAsset.HandleBase", "get_Status") &&
+            Calls(sceneCompleted, "YooAsset.HandleBase", "get_LastError"));
         var git = GetType(hotfix.MainModule, "GitFunction");
         var loading = GetMethod(git, "LoadingComplete");
         Check("loading uses local saves without cloud login", Calls(loading, "PlayerPref", "LoadLocal") &&
@@ -215,30 +219,80 @@ static class Program
         var getMono = FindRef(module, "MonoController", "get_Instance", 0);
         var getScene = FindRef(module, "TEngine.GameModule", "get_Scene", 0);
         var loadScene = FindRef(module, "TEngine.SceneModule", "LoadScene", 7);
+        var sceneHandleType = loadScene.ReturnType;
+        var sceneCallbackType = loadScene.Parameters[4].ParameterType;
+        var sceneCallbackCtor = new MethodReference(".ctor", module.TypeSystem.Void, sceneCallbackType)
+        { HasThis = true };
+        sceneCallbackCtor.Parameters.Add(new ParameterDefinition(module.TypeSystem.Object));
+        sceneCallbackCtor.Parameters.Add(new ParameterDefinition(module.TypeSystem.IntPtr));
+        var handleBase = module.ImportReference(sceneHandleType.Resolve().BaseType);
+        var getStatus = module.ImportReference(handleBase.Resolve().Methods.Single(m => m.Name == "get_Status"));
+        var getLastError = module.ImportReference(handleBase.Resolve().Methods.Single(m => m.Name == "get_LastError"));
+        var toString = new MethodReference("ToString", module.TypeSystem.String, module.TypeSystem.Object)
+        { HasThis = true };
+        var concatString = FindRef(module, "System.String", "Concat", 2, "System.String,System.String");
+        var debugLog = FindRef(module, "UnityEngine.Debug", "Log", 1);
+        var invokeDelay = FindRef(module, "UnityEngine.MonoBehaviour", "Invoke", 2);
+
+        var sceneCompleted = new MethodDefinition("OfflineSceneCompleted",
+            MethodAttributes.Public | MethodAttributes.HideBySig, module.TypeSystem.Void);
+        sceneCompleted.Parameters.Add(new ParameterDefinition(sceneHandleType));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Ldstr, "OFFLINE_YSDT completed. Status: "));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Ldarg_1));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Callvirt, getStatus));
+        sceneCompleted.Body.Instructions.Add(Instruction.Create(OpCodes.Box, getStatus.ReturnType));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Callvirt, toString));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Call, concatString));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Call, debugLog));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Ldstr, "OFFLINE_YSDT error/detail: "));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Ldarg_1));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Callvirt, getLastError));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Call, concatString));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Call, debugLog));
+        sceneCompleted.Body.Instructions.Add(I(OpCodes.Ret));
+        download.Methods.Add(sceneCompleted);
+
         var loadOfflineScene = new MethodDefinition("LoadOfflineScene",
             MethodAttributes.Public | MethodAttributes.HideBySig, module.TypeSystem.Void);
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Call, getScene));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Ldstr, "YSDT"));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Ldc_I4_0));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Ldc_I4_0));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Ldc_I4_S, (sbyte)100));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Ldnull));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Ldc_I4_1));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Ldnull));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Callvirt, loadScene));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Pop));
-        loadOfflineScene.Body.Instructions.Add(I(OpCodes.Ret));
+        loadOfflineScene.Body.InitLocals = true;
+        var sceneHandle = new VariableDefinition(sceneHandleType);
+        loadOfflineScene.Body.Variables.Add(sceneHandle);
+        var retryScene = Instruction.Create(OpCodes.Ldarg_0);
+        var instructions = loadOfflineScene.Body.Instructions;
+        instructions.Add(I(OpCodes.Call, getScene));
+        instructions.Add(I(OpCodes.Ldstr, "YSDT"));
+        instructions.Add(I(OpCodes.Ldc_I4_0));
+        instructions.Add(I(OpCodes.Ldc_I4_0));
+        instructions.Add(I(OpCodes.Ldc_I4_S, (sbyte)100));
+        instructions.Add(I(OpCodes.Ldarg_0));
+        instructions.Add(I(OpCodes.Ldftn, sceneCompleted));
+        instructions.Add(I(OpCodes.Newobj, sceneCallbackCtor));
+        instructions.Add(I(OpCodes.Ldc_I4_1));
+        instructions.Add(I(OpCodes.Ldnull));
+        instructions.Add(I(OpCodes.Callvirt, loadScene));
+        instructions.Add(I(OpCodes.Stloc, sceneHandle));
+        instructions.Add(I(OpCodes.Ldloc, sceneHandle));
+        instructions.Add(I(OpCodes.Brfalse_S, retryScene));
+        instructions.Add(I(OpCodes.Ldstr, "OFFLINE_YSDT load accepted"));
+        instructions.Add(I(OpCodes.Call, debugLog));
+        instructions.Add(I(OpCodes.Ret));
+        instructions.Add(retryScene);
+        instructions.Add(I(OpCodes.Ldstr, "LoadOfflineScene"));
+        instructions.Add(Instruction.Create(OpCodes.Ldc_R4, 0.25f));
+        instructions.Add(I(OpCodes.Call, invokeDelay));
+        instructions.Add(I(OpCodes.Ret));
         download.Methods.Add(loadOfflineScene);
-        var invokeDelay = FindRef(module, "UnityEngine.MonoBehaviour", "Invoke", 2);
         var collect = new MethodReference("Collect", module.TypeSystem.Void,
             new TypeReference("System", "GC", module, module.TypeSystem.CoreLibrary));
         ReplaceBody(startDownload, new[]
         {
-            I(OpCodes.Call, getMono), I(OpCodes.Callvirt, startInit), I(OpCodes.Call, collect),
+            I(OpCodes.Call, getMono), I(OpCodes.Callvirt, startInit),
+            I(OpCodes.Ldstr, "OFFLINE_ENTRY_V2: bundled data initialized"), I(OpCodes.Call, debugLog),
+            I(OpCodes.Call, collect),
             I(OpCodes.Ldarg_0), I(OpCodes.Ldstr, "LoadOfflineScene"), Instruction.Create(OpCodes.Ldc_R4, 1.0f),
             I(OpCodes.Call, invokeDelay), I(OpCodes.Ret),
         });
-        Changed("Startup: initialize bundled marker data, then load YSDT after the initial scene handle settles");
+        Changed("Startup: initialize bundled data, retry YSDT while Main is busy, and report scene completion");
         NoOp(GetMethod(download, "CheckOnline"));
         NoOp(GetMethod(download, "CheckWebFile"));
         Changed("Startup: removed online presence and automatic data-update checks");

@@ -68,6 +68,14 @@ The official marker payloads retain their published MD5 verification. Some `.7z`
 
 Passing decompilation or static checks alone is not treated as proof of runtime operation. CI records `interactiveWindowsRuntimeValidated: false` in `verification/runtime-summary.json`; map/filter/details/completion acceptance still requires a Windows desktop test.
 
+The offline entry retries the map-scene request while the initial `Main` scene is still busy rather than abandoning it after one attempt. Startup and scene-handle diagnostics are written to Unity's normal Windows log:
+
+```text
+%USERPROFILE%\AppData\LocalLow\空荧酒馆\Map\Player.log
+```
+
+Relevant lines are prefixed `OFFLINE_ENTRY_V2` and `OFFLINE_YSDT`. If a failure remains, this log identifies whether bundled-data initialization finished and whether the map-scene request was rejected, accepted, completed, or failed.
+
 ## GitHub Actions build
 
 The **Build official offline Windows client** workflow downloads the pinned official archive at build time, verifies its exact byte count and SHA-256, extracts the original assemblies, applies and audits the offline patches, bundles the official data, runs static verification, and uploads the maximum-compressed 7z with its checksum and reports. The large client archive and intermediate binaries are not committed.
